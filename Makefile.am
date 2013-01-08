@@ -1,14 +1,33 @@
-# $Id: Makefile.am 1411 2009-07-30 07:37:36Z jakob $
+# $Id: Makefile.am 2766 2010-02-01 16:19:49Z rb $
 
-ACLOCAL_AMFLAGS = -I m4
+MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
 
-MAINTAINERCLEANFILES = \
-	config.log config.status \
-	$(srcdir)/Makefile.in \
-	$(srcdir)/config.h.in $(srcdir)/config.h.in~ \
-	$(srcdir)/configure \
-	$(srcdir)/install-sh $(srcdir)/ltmain.sh $(srcdir)/missing \
-	$(srcdir)/depcomp $(srcdir)/aclocal.m4 $(srcdir)/compile \
-	$(srcdir)/config.guess $(srcdir)/config.sub
+sysconfdir =	@sysconfdir@/opendnssec
 
-SUBDIRS = src
+AM_CPPFLAGS =	-I$(srcdir)/.. \
+		@LDNS_INCLUDES@ @XML2_INCLUDES@ \
+		@LIBCURL_CPPFLAGS@ @SQLITE3_INCLUDES@
+AM_CFLAGS =	-std=c99 -D_XOPEN_SOURCE=600
+
+COMPAT =	compat/strlcpy.c
+
+man5_MANS = eppclientd.conf.5
+man8_MANS = eppclient.8 eppclientd.8
+
+sbin_PROGRAMS = eppclient eppclientd
+
+eppclient_SOURCES = eppclient.c eppconfig.c $(COMPAT)
+eppclient_LDADD = @LDNS_LIBS@ @XML2_LIBS@ @SQLITE3_LIBS@
+
+eppclientd_SOURCES = eppclientd.c eppconfig.c epp.c $(COMPAT)
+eppclientd_LDADD = @LDNS_LIBS@ @XML2_LIBS@ @LIBCURL@ @SQLITE3_LIBS@
+
+install-data-hook:
+	test -d ${DESTDIR}${sysconfdir} || mkdir -p ${DESTDIR}${sysconfdir}
+	test -f ${DESTDIR}${sysconfdir}/eppclientd.conf || \
+		${INSTALL_DATA} eppclientd.conf ${DESTDIR}${sysconfdir}
+
+EXTRA_DIST = $(srcdir)/eppclientd.conf.in $(srcdir)/*.h $(srcdir)/*.c
+EXTRA_DIST += $(srcdir)/compat/*.c $(srcdir)/compat/*.h
+
+
